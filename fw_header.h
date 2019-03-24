@@ -1,7 +1,7 @@
 #ifndef FW_HEADER_H
 #define FW_HEADER_H
 
-
+//fanuc header file
 /*
     Axis define
 */
@@ -10427,11 +10427,20 @@ typedef short (*cnc_rdcurrent)( unsigned short, short * ) ;
 typedef short (*cnc_rdcurrent)( unsigned short, long * ) ;
 #endif
 
+/* 读取调整速度 */
+/* read the actual speed for each axis */
+typedef short (*cnc_rdsrvspeed)( unsigned short, long * ) ;
+
 /* read alarm status */
 typedef short (*cnc_alarm)( unsigned short, ODBALM * ) ;
 /* read alarm message */
 typedef short (*cnc_rdalmmsg2)( unsigned short, short, short *, ODBALMMSG2 * ) ;
 /* 释放连接句柄 */
 typedef short (*cnc_freelibhndl)(unsigned short FlibHndl);
-
+/* 读取正在执行的程序行号 */
+typedef short  (*cnc_rdseqnum)(unsigned short FlibHndl, ODBSEQ *seqnum);
+/* 查询上电时间/运行时间/剪切时间等*/
+typedef short (*cnc_rdpm_item)(unsigned short FlibHndl, short start_num, short* data_num, IODBPMAINTE* item);
+/* 查询程序好/块号 */
+typedef short (*cnc_rdexecpt)(unsigned short FlibHndl, PRGPNT *pact, PRGPNT *pnext);
 #endif // FW_HEADER_H

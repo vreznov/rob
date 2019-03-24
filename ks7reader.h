@@ -1,38 +1,31 @@
-#ifndef S7_READER_H
-#define S7_READER_H
+#ifndef KS7READER_H
+#define KS7READER_H
 
 #include <QObject>
 #include <QString>
 #include "m_macro.h"
 #include "s7_client.h"
 
-enum class reg_type //寄存器类型
-{
-    mBit = 0x01,
-    mByte = 0x02,
-    mWord = 0x04,
-    mDouble = 0x06
-};
-
 // PLC读取
-class s7_reader : public QObject
+class KS7Reader : public QObject
 {
     Q_OBJECT
 public:
-    explicit s7_reader(QObject *parent = nullptr);
+    explicit KS7Reader(QObject *parent = nullptr);
 
     int cnnt(); //连接到PLC
     void dis_cnnt(); //断开连接
-    void get_tempture(short (&fml_sh)[10]); //返回温度数据数组
+    void GetTempture(float (&fml_sh)[MAX_TEMP]); //返回温度数据数组
     bool isConnected(); //返回连接状态
+    double m_tempreture[MAX_TEMP] = {0.0};
 
 private:
-    void mInit();
-    void read_tempture(); //从PLC读取温度
+    void KInit();
+    void ReadTempture(); //从PLC读取温度
 
     TSnap7Client clt; //PLC client对象
 
-    qint16 m_data[10]; //接收的温度数据，10word/20bytes
+    qint16 m_data[MAX_TEMP]; //接收的温度数据，10word/20bytes
 
 
     QString m_ip= "192.168.1.2";
@@ -42,7 +35,7 @@ private:
 signals:
 
 public slots:
-    void req(); //查询数据
+    void Req(); //查询数据
 };
 
 #endif // S7_READER_H

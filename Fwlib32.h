@@ -33,35 +33,13 @@ extern "C" {
 /*
     Axis define
 */
-/* machine information for FS30i/31i/32i */
+/* machine information for FS0i-A */
 #define HSSB_LIB
-#define FS30D
-
-#if defined (F22_TYPEB)
-#define MAX_AXIS        96
-#define MAX_SPINDLE     24
-#elif defined (F22_TYPEA)
-#define MAX_AXIS        72
-#define MAX_SPINDLE     14
-#elif defined (F22_TYPE5)
-#define MAX_AXIS        48
-#define MAX_SPINDLE     16
-#else 
-#define MAX_AXIS        32
-#define MAX_SPINDLE     8
-#endif
-
-#if defined(F22_TYPEA)
-#define MAX_CNCPATH     15
-#else
+#define FS0ID
+#define MAX_AXIS        4
+#define MAX_SPINDLE     4
 #define MAX_CNCPATH     10
-#endif
-
-#if defined(F22_TYPEA) || defined(F22_TYPEB)
-#define MAX_IFSB_LINE   4
-#else
 #define MAX_IFSB_LINE   3
-#endif
 
 #if !defined (MAX_AXIS)
 #if defined (F22_TYPEB) || !defined(CNC_PPC)

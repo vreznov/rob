@@ -1,6 +1,7 @@
-#include "mcls_chartview.h"
+#include "kchartview.h"
 
-mcls_ChartView::mcls_ChartView()
+KChartView::KChartView(QWidget *parent) :
+    QChartView(parent)
 {
 
 }

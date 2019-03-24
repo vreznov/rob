@@ -1,28 +1,27 @@
-#include "fanuc.h"
+#include "kfanuc.h"
 #include "m_macro.h"
+#include "mg.h"
 
-
-fanuc::fanuc(QObject *parent) : QObject(parent)
+KFanuc::KFanuc(QObject *parent) : QObject(parent)
 {
-    mInit();
+    KInit();
 }
 
-fanuc::~fanuc()
+KFanuc::~KFanuc()
 {
-    if(m_lib)
+    if(fwLib)
     {
         close(); //关闭机床连接
-        m_lib->unload();
-        delete m_lib;
+        fwLib->unload();
+        delete fwLib;
     }
 }
 
-void fanuc::mInit()
+void KFanuc::KInit()
 {
-    m_lib = new QLibrary("Fwlib32.dll", this);
-    if(m_lib)
+    fwLib = new QLibrary("Fwlib32.dll", this);
+    if(fwLib)
     {
-        get_fun_pnter(); //获取指针
 //        cnnt(); //连接到机床
 //        read_sys_info(); //读取机床信息
 
@@ -32,163 +31,162 @@ void fanuc::mInit()
     {
         mc<<"load Fwlib32.dll error,quit"<<me;
     }
-
-    memset(m_abs_pos, 0, sizeof(m_abs_pos));
-    memset(m_axis_load, 0, sizeof(m_axis_load));
-    memset(m_axis_spdl_load, 0 ,sizeof(m_axis_spdl_load));
 }
 
-int fanuc::cnnt()
+int KFanuc::Connect2Device()
 {
-    cnt_ret = cnn(m_ip.toStdString().c_str(),
-                                     m_port,
-                                     m_tmout,
-                                     &m_fhandle);
-    mc<<"connect result: "<<cnt_ret<<me;
-    return cnt_ret;
+    m_returnOfFw = cnc_allclibhndl3(_ip.toStdString().c_str(),
+                                     _port,
+                                     _tmout,
+                                     &_fhandle);
+    mc<<"connect result: "<<m_returnOfFw<<me;
+    return m_returnOfFw;
 }
 
-// 从DLL获取函数指针
-// 如果有未能获取的会直接退出并返回错误代码
-int fanuc::get_fun_pnter()
+void KFanuc::ReadMachineSystemInfo()
 {
-    bool ret_load = m_lib->load();
-    if (ret_load)
-    {
-        mc<<"load sucess"<<me;
-    }
-    else
-    {
-        mc<<"load failed"<<me;
-        return -1;
-    }
-
-    pcnc_sysinfo_ex = (cnc_sysinfo_ex)m_lib->resolve("cnc_sysinfo_ex");
-    if(!pcnc_sysinfo_ex) return -2;
-
-    cnn = (cnc_allclibhndl3)m_lib->resolve("cnc_allclibhndl3");
-    if(!cnn) return -3;
-
-    pcnc_absolute = (cnc_absolute)m_lib->resolve("cnc_absolute");
-    if(!pcnc_absolute) return -4;
-
-    pcnc_actf = (cnc_actf)m_lib->resolve("cnc_actf");
-    if(!pcnc_actf) return -5;
-
-    pcnc_acts = (cnc_acts)m_lib->resolve("cnc_acts");
-    if(!pcnc_acts) return -6;
-
-    pcnc_rdsvmeter = (cnc_rdsvmeter)m_lib->resolve("cnc_rdsvmeter");
-    if(!pcnc_rdsvmeter) return -7;
-
-    pcnc_rdspmeter = (cnc_rdspmeter)m_lib->resolve("cnc_rdspmeter");
-    if(!pcnc_rdspmeter) return -8;
-
-    pcnc_rdproginfo = (cnc_rdproginfo)m_lib->resolve("cnc_rdproginfo");
-    if(!pcnc_rdproginfo) return -9;
-
-    pcnc_rdcurrent = (cnc_rdcurrent)m_lib->resolve("cnc_rdcurrent");
-    if(!pcnc_rdcurrent) return -10;
-
-    pcnc_alarm = (cnc_alarm)m_lib->resolve("cnc_alarm");
-    if(!pcnc_alarm) return -11;
-
-    pcnc_rdalmmsg2 = (cnc_rdalmmsg2)m_lib->resolve("cnc_rdalmmsg2");
-    if(!pcnc_rdalmmsg2) return -12;
-
-    pcnc_freelibhndl = (cnc_freelibhndl)m_lib->resolve("cnc_freelibhndl");
-    if(!pcnc_freelibhndl) return -12;
-
-    return 0;
-}
-
-void fanuc::read_sys_info()
-{
-    short ret = pcnc_sysinfo_ex(m_fhandle, &m_info);
+    short ret = cnc_sysinfo_ex(_fhandle, &_macInfo);
+    ret = cnc_rdnspdl(_fhandle, &m_spinldNum);
     Q_UNUSED(ret)
 }
 
-void fanuc::req()
+void KFanuc::Req()
 {
-    this->read_all();
+    this->ReadAllInfo();
+    emit sig_mac_recvied();
 }
 
 // 注意。没有正确获取到机床信息不能启动查询，否则会导致程序出错退出
-void fanuc::read_all()
+int KFanuc::ReadAllInfo()
 {
-    if(m_info.ctrl_axis == 0)
-        return;
+    if(_macInfo.ctrl_axis == 0)
+        return -1;
 
     QTime tm;
     tm.start();
 
     int ret = 0;
-    Q_UNUSED(ret)
+    short axis_num = _macInfo.ctrl_axis;
+    short spdl_num = _macInfo.ctrl_spdl;
 
-    short axis_num = m_info.ctrl_axis;
-    short spdl_num = m_info.ctrl_spdl;
+    //读取机床基本状态
+    ODBST status = {};
+    ret = cnc_statinfo(_fhandle, &status);
+    m_macAuto = status.aut == 1;
+    m_macRun = status.run == 3;
+    m_macAlarm = status.alarm == 1;
+    m_macEmergency = status.emergency == 1;
 
-    // absolute pos
-    ODBAXIS ax_da;
-    ret = pcnc_absolute(m_fhandle, ALL_AXES, 4+4*MAX_AXIS, &ax_da);
+    //读取轴位置
+    short pos_num = 4;
+    ODBAXDT pos[pos_num*MAX_AXIS] = {};
+    short pos_types[pos_num] = {0, 1, 2, 3};
+    short pos_len = MAX_AXIS;
+    ret = cnc_rdaxisdata(_fhandle, 1, pos_types, pos_num, &pos_len, pos);
 
-    // 进给轴速度/主轴速度
-    ODBACT cact_da;
-    ret = pcnc_actf(m_fhandle, &cact_da);
-    ret = pcnc_acts(m_fhandle, &cact_da);
+    //伺服数据读取
+    short servo_num = 3;
+    ODBAXDT servo[servo_num*MAX_AXIS] = {};
+    short servo_type[servo_num] = {0, 1, 2};
+    short servo_len = MAX_AXIS;
+    ret = cnc_rdaxisdata(_fhandle, 2, servo_type, servo_num, &servo_len, servo);
 
-    // 进给轴负载/主轴负载
-    // 注意：如果控制轴数为0会出错
-    ODBSVLOAD svload[m_info.ctrl_axis]; //轴负载
-    ODBSPLOAD spload[m_info.ctrl_spdl]; //主轴负载
-    ret = pcnc_rdsvmeter(m_fhandle, &axis_num, svload);
-    ret = pcnc_rdspmeter(m_fhandle, 0, &spdl_num, spload);
+    //主轴数据读取
+    short spindle_num = 4;
+    ODBAXDT spindle[spindle_num*MAX_SPINDLE] = {};
+    short spindle_type[spindle_num] = {0, 1, 2, 3};
+    short spindle_len = MAX_SPINDLE;
+    ret = cnc_rdaxisdata(_fhandle, 3, spindle_type, spindle_num, &spindle_len, spindle);
 
-    // 读取程序信息
-    ODBNC prog_info;
-    ret = pcnc_rdproginfo(m_fhandle, 0, 12, &prog_info); //para2:0 bin/1 ascii. para3:12 bin/31 ascii
-    m_reg_prg = prog_info.u.bin.reg_prg;
-    m_unreg_prg = prog_info.u.bin.unreg_prg;
-    m_used_mem = prog_info.u.bin.used_mem;
-    m_unused_mem = prog_info.u.bin.unused_mem;
+    //速度数据 屏蔽的部分无效
+//    short servoSpeed_num = 3;
+//    ODBAXDT servoSpeed[servoSpeed_num*MAX_AXIS] = {};
+//    short servoSpeed_type[servoSpeed_num] = {0, 1, 2};
+//    short servoSpeed_len = MAX_AXIS;
+//    ret = cnc_rdaxisdata(_fhandle, 5, servoSpeed_type, servoSpeed_num, &servoSpeed_len, servoSpeed);
+    //读取各轴转速
+    long srvSpeed[100] = {0}; //注意 不能是MAX_AXIS 会出错
+    ret = cnc_rdsrvspeed(_fhandle, srvSpeed);
 
-    // 读取电流
-    short crrnt[MAX_AXIS];
-    memset(crrnt, 0, sizeof(crrnt));
-    pcnc_rdcurrent(m_fhandle, crrnt);
+    //程序数据  轴数量不可以填写MAX_AXIS
+    odbdy prg_info = {};
+    ret = cnc_rddynamic( _fhandle, 1, sizeof(prg_info), &prg_info ) ;
+
+    //进给轴进给率/主轴速度
+//    ODBACT axes_vel;
+//    ODBACT spdl_vel;
+//    ret = cnc_actf(_fhandle, &axes_vel);
+//    ret = cnc_acts(_fhandle, &spdl_vel);
 
     // 读取报警信息
-    short alm_num = m_max_alm; //读取10条报警信息
-    ODBALMMSG2 alm_msg2[m_max_alm];
-    pcnc_rdalmmsg2(m_fhandle, -1, &alm_num, alm_msg2); //para2: -1=all type.
-    for(int i=0;i<m_max_alm;i++)
-    {
-        m_alms[i] = QString(alm_msg2[i].alm_msg);
-    }
+//    short alm_num = MAX_ALM; //读取10条报警信息
+//    ODBALMMSG2 alm_msg2[MAX_ALM];
+//    cnc_rdalmmsg2(m_fhandle, -1, &alm_num, alm_msg2); //para2: -1=all type.
+//    for(int i=0;i<MAX_ALM;i++)
+//    {
+//        m_mac_alm[i] = QString(alm_msg2[i].alm_msg);
+//    }
 
     // 集中赋值处理
     // 轴信息
-    for(int i=0;i<m_info.ctrl_axis;i++)
+    for(int i=0;i<_macInfo.ctrl_axis;i++)
     {
-        m_abs_pos[i] = ax_da.data[i];
-        m_axis_load[i] = svload[i].svload.data;
+        m_axis_abs_pos[i] = pos[i].data / mg_pow10(pos[i].dec);
+        m_axis_mac_pos[i] = pos[MAX_AXIS + i].data / mg_pow10(pos[MAX_AXIS + i].dec);
+        m_axis_rel_pos[i] = pos[2 * MAX_AXIS + i].data / mg_pow10(pos[2 * MAX_AXIS + i].dec);
+        m_axis_distanceToGo[i] = pos[3 * MAX_AXIS + i].data / mg_pow10(pos[3 * MAX_AXIS + i].dec);
+
+        m_axis_load[i] = servo[i].data / mg_pow10(servo[i].dec);
+        m_axis_crrnt[i] = servo[MAX_AXIS + i].data / mg_pow10(servo[MAX_AXIS + i].dec);
+
+        m_axis_speed[i] = srvSpeed[i];
     }
+    m_axis_feed_rate = prg_info.actf; //进给率
     // 主轴信息
-    for(int i=0;i<m_info.ctrl_spdl;i++)
+    for(int i=0;i<_macInfo.ctrl_spdl;i++)
     {
-        m_axis_spdl_load[i] = spload[i].spload.data;
+        m_spdl_load[i] = spindle[i].data / mg_pow10(spindle[i].dec);
+        //第三个数据是主轴速度
+        m_spdl_speed[i] = spindle[MAX_AXIS * 3 + i].data / mg_pow10(spindle[MAX_AXIS + i].dec);
     }
 
-    rd_tm = tm.elapsed();
-    mc<<"Fanuc读取消耗时间(ms)："<<rd_tm<<me;
+    m_fanucTimestamp = DataPoint();
+    m_readSpendTime = tm.elapsed();
+    m_currentProgNo = prg_info.prgnum;
+    m_mainPaogNo = prg_info.prgmnum;
+
+    if(m_macAuto && m_macRun) emit sig_mac_run(); //对外通知开始读写数据
+    else emit sig_mac_stop();
+
+    return m_readSpendTime;
 }
 
-bool fanuc::isCnted()
+long KFanuc::ReadCurrentProgLine()
 {
-    return cnt_ret == EW_OK;
+    ODBSEQ seqnum;
+    short ret = cnc_rdseqnum(_fhandle, &seqnum);
+    QString sinfo = ret!=0? "failed":"sucess";
+    mc<<sinfo<<me;
+    mc<<"line number "<<seqnum.data<<me;
+
+    // 读取块号
+    PRGPNT numb;
+    PRGPNT pnext;
+    short ret2 = cnc_rdexecpt(_fhandle, &numb, &pnext);
+    mc<<"prog no."<<numb.prog_no<<"block no."<<numb.blk_no<<me;
+    mc<<"next-> prog no."<<pnext.prog_no<<"block no."<<pnext.blk_no<<me;
+    return seqnum.data;
 }
 
-void fanuc::close()
+bool KFanuc::isContected()
 {
-    pcnc_freelibhndl(m_fhandle);
+    return m_returnOfFw == EW_OK;
+}
+
+void KFanuc::close()
+{
+    if(_fhandle)
+    {
+        cnc_freelibhndl(_fhandle);
+    }
 }

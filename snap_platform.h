@@ -101,9 +101,9 @@
 #include <stdlib.h>
 
 #ifdef OS_WINDOWS
+# include <winsock2.h> //注意包含顺序
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
-# include <winsock2.h>
 # include <mmsystem.h>
 #endif
 

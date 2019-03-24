@@ -284,7 +284,7 @@ public:
         // Output : Last operation error
         int LastTcpError;
         // Output : Connected to the remote Host/Peer/Client
-        bool Connected;
+        bool _connected;
         //--------------------------------------------------------------------------
         TMsgSocket();
         virtual ~TMsgSocket();

@@ -1,7 +1,7 @@
 ﻿#ifndef EXCEPTIONBASE_H
 #define EXCEPTIONBASE_H
 
-/*  文件名：exceptionbase.h
+/*  文件名：kexception.h
  *  日期：2019.02.04
  *  作者： Kare
  *  版本：1.0
@@ -25,7 +25,11 @@ public:
     /*!
      \return the error description and the context as a text string.
     */
-    //virtual const char *what() const throw();
+//    virtual const char *what() const _GLIBCXX_USE_NOEXCEPT;
+    virtual const char *what() const _GLIBCXX_USE_NOEXCEPT override
+    {
+        return msg.c_str();
+    }
 
 	string msg; ///< the formatted error message
 

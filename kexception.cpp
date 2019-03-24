@@ -1,5 +1,4 @@
-#include "stdafx.h"
-#include "exceptionbase.h"
+#include "kexception.h"
 
 KException::KException()
 {

@@ -25,40 +25,56 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    fanuc.cpp \
-    yh_ai16.cpp \
-    s7_reader.cpp \
-    mh/s7_client.cpp \
-    mh/s7_isotcp.cpp \
-    mh/s7_micro_client.cpp \
-    mh/s7_peer.cpp \
-    mh/snap_msgsock.cpp \
-    mh/snap_sysutils.cpp \
-    mh/snap_threads.cpp \
-    mysql_opera.cpp \
-    mg.cpp
+    snap7/s7_client.cpp \
+    snap7/s7_isotcp.cpp \
+    snap7/s7_micro_client.cpp \
+    snap7/s7_peer.cpp \
+    snap7/snap_msgsock.cpp \
+    snap7/snap_sysutils.cpp \
+    snap7/snap_threads.cpp \
+    mg.cpp \
+    data_show.cpp \
+    kfanuc.cpp \
+    kfwriter.cpp \
+    kchartview.cpp \
+    kyh_ai16.cpp \
+    kexception.cpp \
+    ks7reader.cpp \
+    kmatcacu.cpp
 
 HEADERS += \
         mainwindow.h \
-    fanuc.h \
     m_macro.h \
     fw_header.h \
-    yh_ai16.h \
     bdaqctrl.h \
-    s7_reader.h \
-    mh/s7_client.h \
-    mh/s7_isotcp.h \
-    mh/s7_micro_client.h \
-    mh/s7_peer.h \
-    mh/snap_msgsock.h \
-    mh/snap_sysutils.h \
-    mh/snap_threads.h \
-    mysql_opera.h \
-    mg.h
+    snap7/s7_client.h \
+    snap7/s7_isotcp.h \
+    snap7/s7_micro_client.h \
+    snap7/s7_peer.h \
+    snap7/snap_msgsock.h \
+    snap7/snap_sysutils.h \
+    snap7/snap_threads.h \
+    mg.h \
+    m_enum.h \
+    data_show.h \
+    kfwriter.h \
+    kchartview.h \
+    kfanuc.h \
+    kyh_ai16.h \
+    kexception.h \
+    ks7reader.h \
+    mstc.h \
+    Fwlib32.h \
+    kmatcacu.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    data_show.ui
 
+# ws2_32.lib WINDOWS SOCKET库
+# winmm.lib windows标准库
 LIBS += -lws2_32  -lwinmm
+win32: LIBS += -L$$PWD/./ -lFwlib32
+win32: LIBS += -LD:\Matlab7\extern\lib\win32\microsoft\msvc70  -llibeng -llibmx -llibmex
 
-INCLUDEPATH += E:\kare\doc\QtProg\nw_gat\mh
+INCLUDEPATH += $$PWD/snap7  D:\Matlab7\extern\include
