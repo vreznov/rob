@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "m_macro.h"
 #include "mg.h"
+#include "klogin.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -28,6 +29,14 @@ void MainWindow::SetBackcolor(QWidget *fml_wd, Qt::GlobalColor color)
     fml_wd->setAutoFillBackground(true);
     fml_wd->setPalette(pal);
     fml_wd->update();
+}
+
+bool MainWindow::Login()
+{
+    KLogin login;
+    login.show();
+
+    return false;
 }
 
 void MainWindow::KInit()
@@ -125,6 +134,7 @@ void MainWindow::on_pb_yh_stp_clicked()
     if(!m_yh.IsRunning())
     {
         SetBackcolor(this->ui->frm_yh, Qt::lightGray);
+        m_fanuc.ReadMachineSystemInfo(); //读取机床基本信息
     }
 }
 

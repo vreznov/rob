@@ -1,11 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <winsock2.h>  //注意需要放在最前，否则会有包含顺序错误的提示
 #include <QMainWindow>
 #include <QTimer>
 #include "kfanuc.h"
-#include "kyh_ai16.h"
 #include "ks7reader.h"
+#include "kyh_ai16.h"
 #include "kfwriter.h"
 #include "data_show.h"
 #include "kmatcacu.h"
@@ -25,6 +26,8 @@ public:
 private:
     void SetBackcolor(QWidget* fml_wd, Qt::GlobalColor color = Qt::gray);
 
+    //! 弹出登录窗口并校验密码
+    bool Login();
 private slots:
 
     void on_pb_yh_st_clicked(); //研华采集卡设置参数

@@ -40,7 +40,8 @@ SOURCES += \
     kyh_ai16.cpp \
     kexception.cpp \
     ks7reader.cpp \
-    kmatcacu.cpp
+    kmatcacu.cpp \
+    klogin.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -65,16 +66,25 @@ HEADERS += \
     ks7reader.h \
     mstc.h \
     Fwlib32.h \
-    kmatcacu.h
+    kmatcacu.h \
+    klogin.h
 
 FORMS += \
         mainwindow.ui \
-    data_show.ui
+    data_show.ui \
+    klogin.ui
 
 # ws2_32.lib WINDOWS SOCKET库
 # winmm.lib windows标准库
 LIBS += -lws2_32  -lwinmm
 win32: LIBS += -L$$PWD/./ -lFwlib32
+#win32: LIBS += -LD:\Matlab7\extern\lib\win32\microsoft\msvc70  -llibeng -llibmx -llibmex
 win32: LIBS += -LD:\Matlab7\extern\lib\win32\microsoft\msvc70  -llibeng -llibmx -llibmex
 
-INCLUDEPATH += $$PWD/snap7  D:\Matlab7\extern\include
+#INCLUDEPATH += $$PWD/snap7  D:\Matlab7\extern\include
+INCLUDEPATH += $$PWD/snap7 D:\Matlab7\extern\include
+DISTFILES += \
+    readme
+
+RESOURCES += \
+    rc1.qrc

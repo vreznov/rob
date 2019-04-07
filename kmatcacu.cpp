@@ -82,7 +82,7 @@ void KMatCacu::CacuMean(const QVector<DataPoint> *fml_d)
 void KMatCacu::GetResult()
 {
 
-    //获取计算结果
+    //获取计算结果 获取matlab中变量的值
     pmxvMean = engGetVariable(ep, "me");
     pmxva = engGetVariable(ep, "va");
     pmxstDif = engGetVariable(ep, "st");

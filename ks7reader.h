@@ -1,10 +1,10 @@
 #ifndef KS7READER_H
 #define KS7READER_H
 
+#include "s7_client.h"
 #include <QObject>
 #include <QString>
 #include "m_macro.h"
-#include "s7_client.h"
 
 // PLC读取
 class KS7Reader : public QObject
